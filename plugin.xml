@@ -32,5 +32,7 @@
         </config-file>
 
         <source-file src="src/com/webmons/disono/videostream/RTSPStream.java" target-dir="src/com/webmons/disono/videostream"/>
+        <source-file src="src/com/webmons/disono/videostream/RTSPActivity.java" target-dir="src/com/webmons/disono/videostream"/>
+        <source-file src="src/com/webmons/disono/videostream/FullScreenVideoView.java" target-dir="src/com/webmons/disono/videostream"/>
     </platform>
 </plugin>
