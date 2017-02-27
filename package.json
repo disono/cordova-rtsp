@@ -1,6 +1,6 @@
 {
   "name": "cordova-rtsp",
-  "version": "0.1",
+  "version": "0.1.1",
   "description": "Cross-platform plugin for Cordova / PhoneGap to to easily play RTSP. Available for Android ONLY.",
   "cordova": {
     "id": "cordova-rtsp",
