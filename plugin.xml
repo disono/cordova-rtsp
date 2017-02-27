@@ -31,6 +31,6 @@
             <activity android:name="com.webmons.disono.videostream.RTSPActivity"/>
         </config-file>
 
-        <source-file src="src/android/Sms.java" target-dir="src/com/cordova/plugins/sms"/>
+        <source-file src="src/com/webmons/disono/videostream/RTSPStream.java" target-dir="src/com/webmons/disono/videostream"/>
     </platform>
 </plugin>
