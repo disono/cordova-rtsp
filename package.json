@@ -1,6 +1,6 @@
 {
   "name": "cordova-rtsp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Cross-platform plugin for Cordova / PhoneGap to to easily play RTSP. Available for Android ONLY.",
   "cordova": {
     "id": "cordova-rtsp",
@@ -25,8 +25,8 @@
       "version": ">=3.0.0"
     }
   ],
-  "author": "Didier Baquier",
-  "license": "MIT",
+  "author": "Archie Disono",
+  "license": "Apache 2.0",
   "bugs": {
     "url": "https://github.com/disono/cordova-rtsp"
   },
