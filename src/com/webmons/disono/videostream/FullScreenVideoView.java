@@ -1,9 +1,9 @@
 package com.webmons.disono.videostream;
 
 /**
- * Author: Archie, Disono (disono.apd@gmail.com / webmonsph@gmail.com)
+ * Author: Archie, Disono (webmonsph@gmail.com)
  * Website: http://www.webmons.com
- *
+ * <p>
  * Created at: 2/27/2017
  */
 

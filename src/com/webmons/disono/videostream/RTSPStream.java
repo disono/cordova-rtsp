@@ -10,15 +10,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 /**
- * Author: Archie, Disono (disono.apd@gmail.com / webmonsph@gmail.com)
+ * Author: Archie, Disono (webmonsph@gmail.com)
  * Website: http://www.webmons.com
- *
+ * <p>
  * Created at: 2/27/2017
  */
 
 public class RTSPStream extends CordovaPlugin {
     private final static int REQUEST_CODE = 10000;
-    private RTSPActivity rtspView;
 
     private CallbackContext callbackContext;
     private Activity activity;
@@ -29,28 +28,29 @@ public class RTSPStream extends CordovaPlugin {
         activity = cordova.getActivity();
         this.callbackContext = callbackContext;
 
-        if (action.equals("play")) {
-            String url = args.getString(0);
-            _initializePlayer(url);
+        switch (action) {
+            case "play":
+                String url = args.getString(0);
+                _initializePlayer(url);
 
-            // Don't return any result now
-            PluginResult pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
-            pluginResult.setKeepCallback(true);
-            callbackContext.sendPluginResult(pluginResult);
+                // Don't return any result now
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
+                pluginResult.setKeepCallback(true);
+                callbackContext.sendPluginResult(pluginResult);
 
-            return true;
-        } else if (action.equals("pause")) {
-            _pause();
+                return true;
+            case "pause":
+                _filters("pause");
 
-            return true;
-        } else if (action.equals("resume")) {
-            _resume();
+                return true;
+            case "resume":
+                _filters("resume");
 
-            return true;
-        } else if (action.equals("stop")) {
-            _stop();
+                return true;
+            case "stop":
+                _filters("stop");
 
-            return true;
+                return true;
         }
 
         return false;
@@ -59,19 +59,18 @@ public class RTSPStream extends CordovaPlugin {
     @Override
     public void onPause(boolean multitasking) {
         super.onPause(multitasking);
-        _pause();
+        _filters("pause");
     }
 
     @Override
     public void onResume(boolean multitasking) {
         super.onResume(multitasking);
-        _resume();
+        _filters("resume");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        _stop();
     }
 
     @Override
@@ -96,43 +95,20 @@ public class RTSPStream extends CordovaPlugin {
         }
     }
 
+    private void _filters(String methodName) {
+        Intent intent = new Intent();
+        intent.setAction("com.webmons.disono.videostream.method");
+        intent.putExtra("method", methodName);
+        activity.sendBroadcast(intent);
+    }
+
     /**
      * Initialize and play the video
      */
     private void _initializePlayer(final String uri) {
-        rtspView = new RTSPActivity();
-
         Intent i = new Intent(activity, RTSPActivity.class);
         i.putExtra("uri", uri);
         activity.startActivityForResult(i, REQUEST_CODE);
-    }
-
-    /**
-     * Pause video
-     */
-    private void _pause() {
-        if (rtspView != null) {
-            rtspView._pause();
-        }
-    }
-
-    /**
-     * Resume video
-     */
-    private void _resume() {
-        if (rtspView != null) {
-            rtspView._resume();
-        }
-    }
-
-    /**
-     * Stop video
-     */
-    private void _stop() {
-        if (rtspView != null) {
-            rtspView._stop();
-            _releaseActivity();
-        }
     }
 
     /**

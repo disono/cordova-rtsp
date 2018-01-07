@@ -1,10 +1,11 @@
 package com.webmons.disono.videostream;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.media.MediaPlayer;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -17,23 +18,44 @@ import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.VideoView;
 
 import org.apache.cordova.CordovaActivity;
 
 /**
- * Author: Archie, Disono (disono.apd@gmail.com / webmonsph@gmail.com)
+ * Author: Archie, Disono (webmonsph@gmail.com)
  * Website: http://www.webmons.com
- *
+ * <p>
  * Created at: 2/27/2017
  */
 
 public class RTSPActivity extends CordovaActivity {
     private static final String TAG = "RTSPStream";
 
-    private VideoView videoView;
-    private ProgressBar spinner;
+    private FullScreenVideoView videoView;
+    BroadcastReceiver br = new BroadcastReceiver() {
 
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent != null) {
+                String method = intent.getStringExtra("method");
+
+                if (method != null) {
+                    switch (method) {
+                        case "pause":
+                            _pause();
+                            break;
+                        case "resume":
+                            _resume();
+                            break;
+                        case "stop":
+                            _stop();
+                            break;
+                    }
+                }
+            }
+        }
+    };
+    private ProgressBar spinner;
     private Activity activity;
 
     @Override
@@ -41,7 +63,18 @@ public class RTSPActivity extends CordovaActivity {
         super.onCreate(savedInstanceState);
         activity = this.cordovaInterface.getActivity();
 
-        _initializePlayer(getIntent().getExtras().getString("uri"));
+        Intent i = getIntent();
+        Bundle bundle = i.getExtras();
+        if (bundle != null) {
+            _initializePlayer(bundle.getString("uri"));
+        }
+
+        _broadcastRCV();
+    }
+
+    private void _broadcastRCV() {
+        IntentFilter filter = new IntentFilter("com.webmons.disono.videostream.method");
+        activity.registerReceiver(br, filter);
     }
 
     /**
@@ -51,86 +84,73 @@ public class RTSPActivity extends CordovaActivity {
         try {
             _hideSystemUi();
 
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler h = new Handler();
-                    h.post(new Runnable() {
-                        public void run() {
-                            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            activity.runOnUiThread(() -> {
+                Handler h = new Handler();
+                h.post(() -> {
+                    activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
-                            // set spinner
-                            spinner = new ProgressBar(activity, null, android.R.attr.progressBarStyleLarge);
-                            spinner.setVisibility(View.VISIBLE);
+                    // set spinner
+                    spinner = new ProgressBar(activity, null, android.R.attr.progressBarStyleLarge);
+                    spinner.setVisibility(View.VISIBLE);
 
-                            // video container layout
-                            final RelativeLayout main = new RelativeLayout(activity);
-                            RelativeLayout.LayoutParams relativeLayoutParams = new RelativeLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
-                            relativeLayoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
-                            main.setLayoutParams(relativeLayoutParams);
+                    // video container layout
+                    final RelativeLayout main = new RelativeLayout(activity);
+                    RelativeLayout.LayoutParams relativeLayoutParams = new RelativeLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
+                    relativeLayoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                    main.setLayoutParams(relativeLayoutParams);
 
-                            // container for our progress bar
-                            final LinearLayout progressBarContainer = new LinearLayout(activity);
-                            progressBarContainer.setLayoutParams(new LinearLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT));
-                            progressBarContainer.setGravity(Gravity.CENTER);
-                            progressBarContainer.setOrientation(LinearLayout.VERTICAL);
+                    // container for our progress bar
+                    final LinearLayout progressBarContainer = new LinearLayout(activity);
+                    progressBarContainer.setLayoutParams(new LinearLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT));
+                    progressBarContainer.setGravity(Gravity.CENTER);
+                    progressBarContainer.setOrientation(LinearLayout.VERTICAL);
 
-                            // initialize video view
-                            videoView = new VideoView(activity);
-                            videoView.setVideoPath(uri);
-                            videoView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
-                            videoView.requestFocus();
-                            videoView.setLayoutParams(new RelativeLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT));
+                    // initialize video view
+                    videoView = new FullScreenVideoView(activity);
+                    videoView.setVideoPath(uri);
+                    videoView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
+                    videoView.requestFocus();
+                    videoView.setLayoutParams(new RelativeLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT));
 
-                            // media controllers
-                            final MediaController mediaController = new MediaController(activity);
-                            mediaController.setMediaPlayer(videoView);
-                            mediaController.setAnchorView(videoView);
-                            videoView.setMediaController(mediaController);
-                            videoView.setZOrderOnTop(true);
-                            videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                                @Override
-                                public void onPrepared(MediaPlayer mp) {
-                                    Log.i(TAG, "Duration = " + videoView.getDuration());
-                                    spinner.setVisibility(View.GONE);
-                                    mediaController.show(2000);
-                                }
-                            });
-                            videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                                @Override
-                                public void onCompletion(MediaPlayer mediaPlayer) {
-                                    _sendResults("donePlaying", null);
-                                }
-                            });
+                    // media controllers
+                    final MediaController mediaController = new MediaController(activity);
+                    mediaController.setMediaPlayer(videoView);
+                    mediaController.setAnchorView(videoView);
+                    videoView.setMediaController(mediaController);
+                    videoView.setZOrderOnTop(true);
+                    videoView.setOnPreparedListener(mp -> {
+                        Log.i(TAG, "Duration = " + videoView.getDuration());
+                        spinner.setVisibility(View.GONE);
+                        mediaController.show(2000);
+                    });
+                    videoView.setOnCompletionListener(mediaPlayer -> _sendResults("donePlaying", null));
 
-                            // add surface holder
-                            final SurfaceHolder mHolder = videoView.getHolder();
-                            mHolder.setKeepScreenOn(true);
-                            mHolder.addCallback(new SurfaceHolder.Callback() {
-                                @Override
-                                public void surfaceCreated(SurfaceHolder holder) {
-                                    _play();
-                                }
+                    // add surface holder
+                    final SurfaceHolder mHolder = videoView.getHolder();
+                    mHolder.setKeepScreenOn(true);
+                    mHolder.addCallback(new SurfaceHolder.Callback() {
+                        @Override
+                        public void surfaceCreated(SurfaceHolder holder) {
+                            _play();
+                        }
 
-                                @Override
-                                public void surfaceDestroyed(SurfaceHolder holder) {
-                                    _stop();
-                                }
+                        @Override
+                        public void surfaceDestroyed(SurfaceHolder holder) {
 
-                                @Override
-                                public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                        }
 
-                                }
-                            });
+                        @Override
+                        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
-                            // add the video and spinner progressbar to view
-                            progressBarContainer.addView(spinner);
-                            main.addView(videoView);
-                            main.addView(progressBarContainer);
-                            activity.setContentView(main);
                         }
                     });
-                }
+
+                    // add the video and spinner progressbar to view
+                    progressBarContainer.addView(spinner);
+                    main.addView(videoView);
+                    main.addView(progressBarContainer);
+                    activity.setContentView(main);
+                });
             });
         } catch (Exception e) {
             spinner.setVisibility(View.GONE);
@@ -153,7 +173,6 @@ public class RTSPActivity extends CordovaActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        _stop();
     }
 
     /**
@@ -189,6 +208,8 @@ public class RTSPActivity extends CordovaActivity {
     public void _stop() {
         if (videoView != null) {
             videoView.stopPlayback();
+            unregisterReceiver(br);
+            finish();
         }
     }
 
@@ -215,23 +236,12 @@ public class RTSPActivity extends CordovaActivity {
         activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        if (Build.VERSION.SDK_INT < 19) {
-            View decorView = activity.getWindow().getDecorView();
-            int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-            decorView.setSystemUiVisibility(uiOptions);
-        } else {
-            View decorView = activity.getWindow().getDecorView();
-            int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-            decorView.setSystemUiVisibility(uiOptions);
-        }
+        View decorView = activity.getWindow().getDecorView();
+        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        decorView.setSystemUiVisibility(uiOptions);
     }
 }
