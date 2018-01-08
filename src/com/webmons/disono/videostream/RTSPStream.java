@@ -28,13 +28,28 @@ public class RTSPStream extends CordovaPlugin {
         activity = cordova.getActivity();
         this.callbackContext = callbackContext;
 
+        String url;
+        PluginResult pluginResult;
+
         switch (action) {
             case "play":
-                String url = args.getString(0);
-                _initializePlayer(url);
+                url = args.getString(0);
+                _initializePlayer(url, null, 1);
 
                 // Don't return any result now
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
+                pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
+                pluginResult.setKeepCallback(true);
+                callbackContext.sendPluginResult(pluginResult);
+
+                return true;
+            case "playWithMarquee":
+                url = args.getString(0);
+                String marqueeTextContent = args.getString(1);
+                int marqueeTextSize = args.getInt(2);
+                _initializePlayer(url, marqueeTextContent, marqueeTextSize);
+
+                // Don't return any result now
+                pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
                 pluginResult.setKeepCallback(true);
                 callbackContext.sendPluginResult(pluginResult);
 
@@ -105,9 +120,11 @@ public class RTSPStream extends CordovaPlugin {
     /**
      * Initialize and play the video
      */
-    private void _initializePlayer(final String uri) {
+    private void _initializePlayer(final String uri, String marqueeText, int marqueeTextSize) {
         Intent i = new Intent(activity, RTSPActivity.class);
         i.putExtra("uri", uri);
+        i.putExtra("marqueeText", marqueeText);
+        i.putExtra("marqueeTextSize", marqueeTextSize);
         activity.startActivityForResult(i, REQUEST_CODE);
     }
 

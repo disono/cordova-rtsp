@@ -26,7 +26,15 @@ rtspVideo.stop();
 Tested on Cordova-Android@7.0.0
 Test Server for Videos try https://www.wowza.com/html/mobile.html
 
+// play video only
 rtspVideo.play('rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov', function () {
+    console.log('Done Playing.');
+}, function (e) {
+    console.error('Error: ' + e);
+});
+
+// add text marquee
+rtspVideo.playWithMarquee('rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov', "Your moving text(Horizontally).", 1, function () {
     console.log('Done Playing.');
 }, function (e) {
     console.error('Error: ' + e);
